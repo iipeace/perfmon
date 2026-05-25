@@ -1,6 +1,7 @@
 package com.oss.perfmon.di
 
 import com.oss.perfmon.channel.TcpChannel
+import com.oss.perfmon.channel.TcpChannelImpl
 import com.oss.perfmon.monitor.ResourceMonitor
 import com.oss.perfmon.probe.SystemProbe
 import dagger.Module
@@ -16,7 +17,7 @@ object AppModule {
 
     // TcpChannel은 매 명령어마다 소켓을 새로 열고 닫으므로 Singleton이 아니다
     @Provides
-    fun provideChannel(): TcpChannel = TcpChannel()
+    fun provideChannel(): TcpChannel = TcpChannelImpl()
 
     // ResourceMonitor는 channel을 공유하므로 Singleton으로 관리
     @Provides
