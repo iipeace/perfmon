@@ -1,5 +1,7 @@
 package com.oss.perfmon.ui.screen
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,7 +22,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.compose.ui.tooling.preview.Preview
+import com.oss.perfmon.model.CpuSample
+import com.oss.perfmon.model.ResourceTimeRange
+import com.oss.perfmon.ui.components.CpuSection
+import com.oss.perfmon.ui.components.TimeRangeChipRow
+import com.oss.perfmon.ui.viewmodel.ConnectionState
 import com.oss.perfmon.ui.viewmodel.MonitorViewModel
+import com.oss.perfmon.ui.viewmodel.UiState
 
 @Composable
 fun MonitorScreen(
@@ -29,9 +38,27 @@ fun MonitorScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    MonitorContent(
+        uiState = uiState,
+        onStart = viewModel::start,
+        onStop = viewModel::stop,
+        onSelectTimeRange = viewModel::selectTimeRange,
+        onBack = { navController.navigateUp() }
+    )
+}
+
+@Composable
+fun MonitorContent(
+    uiState: UiState,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    onSelectTimeRange: (ResourceTimeRange) -> Unit,
+    onBack: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         verticalArrangement = Arrangement.Top
     ) {
@@ -49,14 +76,28 @@ fun MonitorScreen(
 
         HorizontalDivider(modifier = Modifier.padding(bottom = 24.dp))
 
-        val (statusText, statusColor) = when (val state = uiState) {
-            is MonitorViewModel.UiState.Idle ->
+        TimeRangeChipRow(
+            selected = uiState.selectedTimeRange,
+            onSelect = onSelectTimeRange,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+
+        CpuSection(
+            samples = uiState.chartCpuSamples,
+            rangeSeconds = uiState.selectedTimeRange.seconds,
+            currentPct = uiState.currentCpuPercent,
+            avgPct = uiState.averageCpuPercent,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
+
+        val (statusText, statusColor) = when (val state = uiState.connectionState) {
+            is ConnectionState.Idle ->
                 "대기 중" to MaterialTheme.colorScheme.onSurfaceVariant
-            is MonitorViewModel.UiState.Loading ->
+            is ConnectionState.Loading ->
                 "연결 중..." to Color(0xFF1565C0)
-            is MonitorViewModel.UiState.Active ->
+            is ConnectionState.Active ->
                 "수신 중... ${state.count}회" to Color(0xFF2E7D32)
-            is MonitorViewModel.UiState.Error ->
+            is ConnectionState.Error ->
                 "오류: ${state.message}" to MaterialTheme.colorScheme.error
         }
 
@@ -84,17 +125,17 @@ fun MonitorScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Button(
-                onClick = { viewModel.start() },
-                enabled = uiState is MonitorViewModel.UiState.Idle ||
-                        uiState is MonitorViewModel.UiState.Error,
+                onClick = onStart,
+                enabled = uiState.connectionState is ConnectionState.Idle ||
+                        uiState.connectionState is ConnectionState.Error,
                 modifier = Modifier.weight(1f)
             ) {
                 Text("Start")
             }
             Button(
-                onClick = { viewModel.stop() },
-                enabled = uiState is MonitorViewModel.UiState.Active ||
-                        uiState is MonitorViewModel.UiState.Loading,
+                onClick = onStop,
+                enabled = uiState.connectionState is ConnectionState.Active ||
+                        uiState.connectionState is ConnectionState.Loading,
                 modifier = Modifier.weight(1f)
             ) {
                 Text("Stop")
@@ -102,12 +143,41 @@ fun MonitorScreen(
         }
 
         OutlinedButton(
-            onClick = { navController.navigateUp() },
+            onClick = onBack,
             modifier = Modifier
                 .padding(top = 16.dp)
                 .align(Alignment.CenterHorizontally)
         ) {
             Text("돌아가기")
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MonitorScreenPreview() {
+    val samples = listOf(
+        CpuSample(System.currentTimeMillis() - 50000, 10f),
+        CpuSample(System.currentTimeMillis() - 40000, 30f),
+        CpuSample(System.currentTimeMillis() - 30000, 20f),
+        CpuSample(System.currentTimeMillis() - 20000, 50f),
+        CpuSample(System.currentTimeMillis() - 10000, 40f),
+        CpuSample(System.currentTimeMillis(), 60f)
+    )
+
+    MaterialTheme {
+        MonitorContent(
+            uiState = UiState(
+                connectionState = ConnectionState.Active(123),
+                selectedTimeRange = ResourceTimeRange.MIN_1,
+                chartCpuSamples = samples,
+                currentCpuPercent = 60f,
+                averageCpuPercent = 35f,
+            ),
+            onStart = {},
+            onStop = {},
+            onSelectTimeRange = {},
+            onBack = {}
+        )
     }
 }
