@@ -101,7 +101,7 @@ private fun CpuLineChart(
         val canvasWidth = size.width
         val canvasHeight = size.height
 
-        val nowMs = samples.lastOrNull()?.timestampMs ?: System.currentTimeMillis()
+        val nowMs = System.currentTimeMillis()
         val rangeMs = rangeSeconds * 1_000L
         val startMs = nowMs - rangeMs
 

@@ -52,6 +52,7 @@ class MonitorViewModel @Inject constructor(
                     onSuccess = { snapshot ->
                         count++
                         latestCpuPercent = snapshot.cpu.usagePercent.toFloat()
+                        if (samplingJob?.isActive != true) startCpuSampling()
                         _uiState.value = _uiState.value.copy(
                             connectionState = ConnectionState.Active(count),
                         )
