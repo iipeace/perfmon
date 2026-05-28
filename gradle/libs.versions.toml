@@ -13,6 +13,8 @@ hilt = "2.51.1"
 hiltNavigationCompose = "1.2.0"
 material = "1.12.0"
 gson = "2.10.1"
+coroutines = "1.8.1"
+orgJson = "20231013"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -31,6 +33,8 @@ hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-com
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 
