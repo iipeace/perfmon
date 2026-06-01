@@ -24,6 +24,28 @@ fun NetworkSection(
     totalOutbound: Long
 ) {
 
+    val maxTraffic = maxOf(inboundBps, outboundBps)
+
+    val inboundBar = if (maxTraffic > 0) {
+        "█".repeat(
+            ((inboundBps.toFloat() / maxTraffic) * 20)
+                .toInt()
+                .coerceAtLeast(1)
+        )
+    } else {
+        "-"
+    }
+
+    val outboundBar = if (maxTraffic > 0) {
+        "█".repeat(
+            ((outboundBps.toFloat() / maxTraffic) * 20)
+                .toInt()
+                .coerceAtLeast(1)
+        )
+    } else {
+        "-"
+    }
+
     Row(
         modifier = Modifier.padding(bottom = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -43,6 +65,8 @@ fun NetworkSection(
             }"
         )
 
+        Text(inboundBar)
+
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
@@ -50,7 +74,10 @@ fun NetworkSection(
                 formatTraffic(outboundBps.toLong(), trafficUnit)
             }"
         )
+
+        Text(outboundBar)
     }
+
     Column(modifier = Modifier.padding(top = 12.dp)) {
         Text("total inbound: ${formatTraffic(totalInbound, trafficUnit, false)}")
         Text("total outbound: ${formatTraffic(totalOutbound, trafficUnit, false)}")
