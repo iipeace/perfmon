@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.oss.perfmon.model.CpuSample
 import com.oss.perfmon.model.NetStats
 import com.oss.perfmon.model.ResourceTimeRange
+import com.oss.perfmon.model.TotalNetworkTraffic
 import com.oss.perfmon.model.TrafficUnit
 import com.oss.perfmon.monitor.ResourceMonitor
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,6 +41,10 @@ class MonitorViewModel @Inject constructor(
 
     private var previousNetworkTimeMs = 0L
 
+    private var totalInbound = 0L
+
+    private var totalOutbound = 0L
+
     // 스트리밍 시작 — 이미 실행 중이면 중복 실행하지 않는다
     fun start() {
         if (streamJob?.isActive == true) return
@@ -62,10 +67,13 @@ class MonitorViewModel @Inject constructor(
                         val inboundBps = (snapshot.network.inboundBytes * 1000L / elapsedMs).toInt()
                         val outboundBps =
                             (snapshot.network.outboundBytes * 1000L / elapsedMs).toInt()
+                        totalInbound += snapshot.network.inboundBytes
+                        totalOutbound += snapshot.network.outboundBytes
 
                         _uiState.value = _uiState.value.copy(
                             connectionState = ConnectionState.Active(count),
-                            networkTraffic = NetStats(inboundBps, outboundBps)
+                            networkTraffic = NetStats(inboundBps, outboundBps),
+                            totalNetworkTraffic = TotalNetworkTraffic(totalInbound, totalOutbound)
                         )
                     },
                     onFailure = {
@@ -106,12 +114,15 @@ class MonitorViewModel @Inject constructor(
         allCpuSamples.clear()
         latestCpuPercent = null
         previousNetworkTimeMs = 0L
+        totalInbound = 0L
+        totalOutbound = 0L
         _uiState.value = _uiState.value.copy(
             connectionState = ConnectionState.Idle,
             chartCpuSamples = emptyList(),
             currentCpuPercent = 0f,
             averageCpuPercent = 0f,
-            networkTraffic = NetStats(0, 0)
+            networkTraffic = NetStats(0, 0),
+            totalNetworkTraffic = TotalNetworkTraffic(0L,0L)
         )
     }
 
@@ -258,5 +269,6 @@ data class UiState(
     val currentCpuPercent: Float = 0f,
     val averageCpuPercent: Float = 0f,
     val networkTraffic: NetStats = NetStats(0, 0),
-    val selectedTrafficUnit: TrafficUnit = TrafficUnit.BYTE
+    val selectedTrafficUnit: TrafficUnit = TrafficUnit.BYTE,
+    val totalNetworkTraffic: TotalNetworkTraffic = TotalNetworkTraffic(0L, 0L)
 )

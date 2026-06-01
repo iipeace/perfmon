@@ -19,7 +19,9 @@ fun NetworkSection(
     inboundBps: Int,
     outboundBps: Int,
     trafficUnit: TrafficUnit,
-    onTrafficUnitSelected: (TrafficUnit) -> Unit
+    onTrafficUnitSelected: (TrafficUnit) -> Unit,
+    totalInbound: Long,
+    totalOutbound: Long
 ) {
 
     Row(
@@ -49,23 +51,30 @@ fun NetworkSection(
             }"
         )
     }
+    Column(modifier = Modifier.padding(top = 12.dp)) {
+        Text("total inbound: ${formatTraffic(totalInbound, trafficUnit, false)}")
+        Text("total outbound: ${formatTraffic(totalOutbound, trafficUnit, false)}")
+    }
 }
 
 private fun formatTraffic(
     bytes: Long,
-    unit: TrafficUnit
+    unit: TrafficUnit,
+    perSecond: Boolean = true
 ): String {
+
+    val suffix = if (perSecond) "/s" else ""
 
     return when (unit) {
 
         TrafficUnit.BYTE ->
-            "${NumberFormat.getNumberInstance().format(bytes)} B/s"
+            "${NumberFormat.getNumberInstance().format(bytes)} B$suffix"
 
         TrafficUnit.KB ->
-            "%.2f KB/s".format(bytes / 1024.0)
+            "%.2f KB$suffix".format(bytes / 1024.0)
 
         TrafficUnit.MB ->
-            "%.2f MB/s".format(bytes / 1024.0 / 1024.0)
+            "%.2f MB$suffix".format(bytes / 1024.0 / 1024.0)
     }
 }
 

@@ -106,7 +106,9 @@ fun MonitorContent(
             inboundBps = uiState.networkTraffic.inboundBytes,
             outboundBps = uiState.networkTraffic.outboundBytes,
             trafficUnit = uiState.selectedTrafficUnit,
-            onTrafficUnitSelected = onSelectTrafficUnit
+            onTrafficUnitSelected = onSelectTrafficUnit,
+            totalInbound = uiState.totalNetworkTraffic.inboundBytes,
+            totalOutbound = uiState.totalNetworkTraffic.outboundBytes
         )
 
         HorizontalDivider(modifier = Modifier.padding(top = 24.dp, bottom = 24.dp))
