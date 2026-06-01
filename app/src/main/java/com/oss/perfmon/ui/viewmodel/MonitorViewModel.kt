@@ -3,7 +3,9 @@ package com.oss.perfmon.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.oss.perfmon.model.CpuSample
+import com.oss.perfmon.model.NetStats
 import com.oss.perfmon.model.ResourceTimeRange
+import com.oss.perfmon.model.TrafficUnit
 import com.oss.perfmon.monitor.ResourceMonitor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -36,6 +38,8 @@ class MonitorViewModel @Inject constructor(
     // latestCpuPercent를 1초 단위 샘플로 변환하는 코루틴
     private var samplingJob: Job? = null
 
+    private var previousNetworkTimeMs = 0L
+
     // 스트리밍 시작 — 이미 실행 중이면 중복 실행하지 않는다
     fun start() {
         if (streamJob?.isActive == true) return
@@ -53,8 +57,15 @@ class MonitorViewModel @Inject constructor(
                         count++
                         latestCpuPercent = snapshot.cpu.usagePercent.toFloat()
                         if (samplingJob?.isActive != true) startCpuSampling()
+
+                        val elapsedMs = calculateElapsedMs()
+                        val inboundBps = (snapshot.network.inboundBytes * 1000L / elapsedMs).toInt()
+                        val outboundBps =
+                            (snapshot.network.outboundBytes * 1000L / elapsedMs).toInt()
+
                         _uiState.value = _uiState.value.copy(
                             connectionState = ConnectionState.Active(count),
+                            networkTraffic = NetStats(inboundBps, outboundBps)
                         )
                     },
                     onFailure = {
@@ -68,6 +79,24 @@ class MonitorViewModel @Inject constructor(
         }
     }
 
+    private fun calculateElapsedMs(): Long {
+        val currentNetworkTimeMs = System.currentTimeMillis()
+
+        if (previousNetworkTimeMs == 0L) {
+            previousNetworkTimeMs = currentNetworkTimeMs
+            return 1000L
+        }
+
+        val elapsedMs = currentNetworkTimeMs - previousNetworkTimeMs
+        previousNetworkTimeMs = currentNetworkTimeMs
+
+        return elapsedMs
+    }
+
+    fun selectNetworkTrafficUnit(unit: TrafficUnit){
+        _uiState.value = _uiState.value.copy(selectedTrafficUnit = unit)
+    }
+
     // 스트리밍 중지 — 코루틴을 취소하고 Idle로 복귀
     fun stop() {
         streamJob?.cancel()
@@ -76,11 +105,13 @@ class MonitorViewModel @Inject constructor(
         samplingJob = null
         allCpuSamples.clear()
         latestCpuPercent = null
+        previousNetworkTimeMs = 0L
         _uiState.value = _uiState.value.copy(
             connectionState = ConnectionState.Idle,
             chartCpuSamples = emptyList(),
             currentCpuPercent = 0f,
             averageCpuPercent = 0f,
+            networkTraffic = NetStats(0, 0)
         )
     }
 
@@ -226,4 +257,6 @@ data class UiState(
     val chartCpuSamples: List<CpuSample> = emptyList(),
     val currentCpuPercent: Float = 0f,
     val averageCpuPercent: Float = 0f,
+    val networkTraffic: NetStats = NetStats(0, 0),
+    val selectedTrafficUnit: TrafficUnit = TrafficUnit.BYTE
 )
