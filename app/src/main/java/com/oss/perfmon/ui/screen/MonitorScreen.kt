@@ -25,7 +25,9 @@ import androidx.navigation.NavController
 import androidx.compose.ui.tooling.preview.Preview
 import com.oss.perfmon.model.CpuSample
 import com.oss.perfmon.model.ResourceTimeRange
+import com.oss.perfmon.model.TrafficUnit
 import com.oss.perfmon.ui.components.CpuSection
+import com.oss.perfmon.ui.components.NetworkSection
 import com.oss.perfmon.ui.components.TimeRangeChipRow
 import com.oss.perfmon.ui.viewmodel.ConnectionState
 import com.oss.perfmon.ui.viewmodel.MonitorViewModel
@@ -43,6 +45,7 @@ fun MonitorScreen(
         onStart = viewModel::start,
         onStop = viewModel::stop,
         onSelectTimeRange = viewModel::selectTimeRange,
+        onSelectTrafficUnit = viewModel::selectNetworkTrafficUnit,
         onBack = { navController.navigateUp() }
     )
 }
@@ -53,6 +56,7 @@ fun MonitorContent(
     onStart: () -> Unit,
     onStop: () -> Unit,
     onSelectTimeRange: (ResourceTimeRange) -> Unit,
+    onSelectTrafficUnit: (TrafficUnit) -> Unit,
     onBack: () -> Unit
 ) {
     Column(
@@ -89,6 +93,25 @@ fun MonitorContent(
             avgPct = uiState.averageCpuPercent,
             modifier = Modifier.padding(bottom = 24.dp)
         )
+
+        HorizontalDivider(modifier = Modifier.padding(bottom = 24.dp))
+
+        Text(
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp),
+            text = "Network"
+        )
+
+        NetworkSection(
+            inboundBps = uiState.networkTraffic.inboundBytes,
+            outboundBps = uiState.networkTraffic.outboundBytes,
+            trafficUnit = uiState.selectedTrafficUnit,
+            onTrafficUnitSelected = onSelectTrafficUnit,
+            totalInbound = uiState.totalNetworkTraffic.inboundBytes,
+            totalOutbound = uiState.totalNetworkTraffic.outboundBytes
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(top = 24.dp, bottom = 24.dp))
 
         val (statusText, statusColor) = when (val state = uiState.connectionState) {
             is ConnectionState.Idle ->
@@ -177,6 +200,7 @@ fun MonitorScreenPreview() {
             onStart = {},
             onStop = {},
             onSelectTimeRange = {},
+            onSelectTrafficUnit = {},
             onBack = {}
         )
     }

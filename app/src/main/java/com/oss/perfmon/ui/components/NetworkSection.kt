@@ -1,0 +1,107 @@
+package com.oss.perfmon.ui.components
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.oss.perfmon.model.TrafficUnit
+import java.text.NumberFormat
+
+@Composable
+fun NetworkSection(
+    inboundBps: Int,
+    outboundBps: Int,
+    trafficUnit: TrafficUnit,
+    onTrafficUnitSelected: (TrafficUnit) -> Unit,
+    totalInbound: Long,
+    totalOutbound: Long
+) {
+
+    val maxTraffic = maxOf(inboundBps, outboundBps)
+
+    val inboundBar = if (maxTraffic > 0) {
+        "█".repeat(
+            ((inboundBps.toFloat() / maxTraffic) * 20)
+                .toInt()
+                .coerceAtLeast(1)
+        )
+    } else {
+        "-"
+    }
+
+    val outboundBar = if (maxTraffic > 0) {
+        "█".repeat(
+            ((outboundBps.toFloat() / maxTraffic) * 20)
+                .toInt()
+                .coerceAtLeast(1)
+        )
+    } else {
+        "-"
+    }
+
+    Row(
+        modifier = Modifier.padding(bottom = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        TrafficUnit.entries.forEach { unit ->
+            FilterChip(
+                selected = trafficUnit == unit,
+                onClick = { onTrafficUnitSelected(unit) },
+                label = { Text(unit.name) }
+            )
+        }
+    }
+    Column {
+        Text(
+            "Inbound : ${
+                formatTraffic(inboundBps.toLong(), trafficUnit)
+            }"
+        )
+
+        Text(inboundBar)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            "Outbound : ${
+                formatTraffic(outboundBps.toLong(), trafficUnit)
+            }"
+        )
+
+        Text(outboundBar)
+    }
+
+    Column(modifier = Modifier.padding(top = 12.dp)) {
+        Text("total inbound: ${formatTraffic(totalInbound, trafficUnit, false)}")
+        Text("total outbound: ${formatTraffic(totalOutbound, trafficUnit, false)}")
+    }
+}
+
+private fun formatTraffic(
+    bytes: Long,
+    unit: TrafficUnit,
+    perSecond: Boolean = true
+): String {
+
+    val suffix = if (perSecond) "/s" else ""
+
+    return when (unit) {
+
+        TrafficUnit.BYTE ->
+            "${NumberFormat.getNumberInstance().format(bytes)} B$suffix"
+
+        TrafficUnit.KB ->
+            "%.2f KB$suffix".format(bytes / 1024.0)
+
+        TrafficUnit.MB ->
+            "%.2f MB$suffix".format(bytes / 1024.0 / 1024.0)
+    }
+}
+
